@@ -1,0 +1,199 @@
+@model IEnumerable<FileData>
+
+
+@{ ViewData["Title"] = "Index"; }
+
+<hr />
+@foreach (var item in Model)
+{
+
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" id="uploadForm"
+              enctype="multipart/form-data" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                @Html.LabelFor(i => item.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+                <div class="col-md-10">
+                    @Html.EditorFor(i => item.Name, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(i => item.Name, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(i => item.CreationDate, htmlAttributes: new { @class = "control-label" })
+                <div class="col-md-10">
+                    @Html.EditorFor(i => item.CreationDate, new { htmlAttributes = new { @class = "form-control" } })
+                    @Html.ValidationMessageFor(i => item.CreationDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    @Html.EditorFor(i => item.ContainsCyrillic, new { htmlAttributes = new { @class = "form-check-input" } })
+                    @Html.ValidationMessageFor(i => item.ContainsCyrillic, "", new { @class = "text-danger" })
+
+                    @Html.DisplayNameFor(model => model.ContainsCyrillic)
+                </label>
+            </div>
+
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    @Html.EditorFor(i => item.ContainsLatin, new { htmlAttributes = new { @class = "form-check-input" } })
+                    @Html.ValidationMessageFor(i => item.ContainsLatin, "", new { @class = "text-danger" })
+
+                    @Html.DisplayNameFor(model => model.ContainsLatin)
+                </label>
+            </div>
+
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    @Html.EditorFor(i => item.ContainsNumbers, new { htmlAttributes = new { @class = "form-check-input" } })
+                    @Html.ValidationMessageFor(i => item.ContainsNumbers, "", new { @class = "text-danger" })
+
+                    @Html.DisplayNameFor(model => model.ContainsNumbers)
+                </label>
+            </div>
+
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    @Html.EditorFor(i => item.ContainsSpChar, new { htmlAttributes = new { @class = "form-check-input" } })
+                    @Html.ValidationMessageFor(i => item.ContainsSpChar, "", new { @class = "text-danger" })
+
+                    @Html.DisplayNameFor(model => model.ContainsSpChar)
+                </label>
+            </div>
+
+            <div class="form-group">
+
+                <div class="col-md-5">
+                    @Html.DropDownListFor(i => item.SelectedAnswerId, new List<SelectListItem>
+                                                                                                                                                                                                                                                                                                                                                            {
+        new SelectListItem { Value = "0", Text = "отсутствует" },
+        new SelectListItem { Value = "1", Text = "в именах файлов" },
+        new SelectListItem { Value = "2", Text = "в oтдельном файле"},
+    }
+                              , htmlAttributes: new { @class = "form-control", id = "SelectedAnswerId" })
+                    @Html.ValidationMessageFor(i => item.SelectedAnswerId, "", new { @class = "text-danger" })
+                </div>
+
+
+
+
+            </div>
+
+            <div class="form-group">
+
+                <input id="postedFile" name="postedFile" type="file" />
+                @Html.ValidationMessageFor(i => item.postedFile, "", new { @class = "text-danger" })
+
+                @Html.DisplayNameFor(i => item.postedFile)
+
+                <hr />
+                <input type="submit" value="Загрузить архив" class="btn btn-primary" />
+                <span style="color:green">@ViewBag.Message</span>
+                @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+            </div>
+
+        </form>
+    </div>
+</div>}
+<hr />
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CreationDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ContainsCyrillic)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ContainsLatin)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ContainsNumbers)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ContainsSpChar)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+
+
+
+        @foreach (var item in Model)
+        {
+<tr>
+    <td>
+        @Html.DisplayFor(modelItem => item.Name)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.CreationDate)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.ContainsCyrillic)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.ContainsLatin)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.ContainsNumbers)
+    </td>
+    <td>
+        @Html.DisplayFor(modelItem => item.ContainsSpChar)
+    </td>
+    <td>
+        <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+        <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+        <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+    </td>
+</tr>}
+    </tbody>
+</table>
+<div>
+    <span style="color:green">@ViewBag.Message</span>
+</div>
+
+@*@section Scripts {
+        <script>"use strict";
+            $(document).ready(function () {
+                async function AJAXSubmit(oFormElement) {
+                    const formData = new FormData(oFormElement);
+
+                    try {
+                        const response = await fetch(oFormElement.action, {
+                            type: 'POST',
+                            headers: {
+                                'RequestVerificationToken': getCookie('RequestVerificationToken')
+                            },
+                            body: formData
+                        });
+
+                        oFormElement.elements.namedItem("result").value =
+                            'Result: ' + response.status + ' ' + response.statusText;
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                }
+
+                function getCookie(name) {
+                    var value = "; " + document.cookie;
+                    var parts = value.split("; " + name + "=");
+                    if (parts.length == 2) return parts.pop().split(";").shift();
+                }
+            });</script>
+    }*@
+
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
