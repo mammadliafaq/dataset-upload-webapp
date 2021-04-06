@@ -37,10 +37,16 @@ namespace UploadWebApp.Migrations
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasRegistrSensitivity")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(8)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("SelectedAnswerId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

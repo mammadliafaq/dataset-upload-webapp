@@ -18,185 +18,162 @@ namespace UploadWebApp.Utilities
     public static class FileHelpers
     {
 
-        private static readonly byte[] _allowedChars = { };
-
-        private static readonly Dictionary<string, List<byte[]>> _fileSignature = new Dictionary<string, List<byte[]>>
-        {
-            { ".gif", new List<byte[]> { new byte[] { 0x47, 0x49, 0x46, 0x38 } } },
-            { ".png", new List<byte[]> { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } } },
-            { ".jpeg", new List<byte[]>
-                {
-                    new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 },
-                    new byte[] { 0xFF, 0xD8, 0xFF, 0xE2 },
-                    new byte[] { 0xFF, 0xD8, 0xFF, 0xE3 },
-                }
-            },
-            { ".jpg", new List<byte[]>
-                {
-                    new byte[] { 0xFF, 0xD8, 0xFF, 0xE0 },
-                    new byte[] { 0xFF, 0xD8, 0xFF, 0xE1 },
-                    new byte[] { 0xFF, 0xD8, 0xFF, 0xE8 },
-                }
-            },
-            { ".zip", new List<byte[]>
-                {
-                    new byte[] { 0x50, 0x4B, 0x03, 0x04 },
-                    new byte[] { 0x50, 0x4B, 0x4C, 0x49, 0x54, 0x45 },
-                    new byte[] { 0x50, 0x4B, 0x53, 0x70, 0x58 },
-                    new byte[] { 0x50, 0x4B, 0x05, 0x06 },
-                    new byte[] { 0x50, 0x4B, 0x07, 0x08 },
-                    new byte[] { 0x57, 0x69, 0x6E, 0x5A, 0x69, 0x70 },
-                }
-            },
-        };
-
 
         public static async Task<byte[]> ProcessedFormFile<T>(FileData data, IFormFile formFile, ModelStateDictionary modelState,
-            string[] permittedExtensions, int selectedAnswerValue, int minValue,
-            int maxValue)
+            string[] permittedExtensions, int minValue, int maxValue, string targetFilePath, string trustedFileNameForFileStorage)
 
         {
-            long numberOfPict = 0, numberOfTxtFiles = 0, numberOfPicAnswPairs = 0;
+            long numberOfPict = 0, numberOfTxtFiles = 0, numberOfOthrFiles = 0, numberOfPicAnswPairs = 0;
 
             var trustedFileNameForDisplay = WebUtility.HtmlEncode(
                 formFile.FileName);
-            if (CheckForValidation(data, formFile, modelState, permittedExtensions))
+            if (CheckForValidation(data, formFile, modelState, permittedExtensions, targetFilePath, trustedFileNameForFileStorage))
             {
                 try
                 {
 
-                    using (var memoryStream = new MemoryStream())
+                    using var memoryStream = new MemoryStream();
+                    await formFile.CopyToAsync(memoryStream);
+
+
+                    if (memoryStream.Length == 0)
                     {
-                        await formFile.CopyToAsync(memoryStream);
+                        modelState.AddModelError(trustedFileNameForDisplay, "Загружаемый файл пуст");
+                    }
 
-                        // Check the content length in case the file's only
-                        // content was a BOM and the content is actually
-                        // empty after removing the BOM.
-                        if (memoryStream.Length == 0)
+
+                    using var zip = new ZipArchive(memoryStream, ZipArchiveMode.Read);
+                    foreach (var entry in zip.Entries)
+                    {
+                        if (!entry.FullName.StartsWith("_"))
                         {
-                            modelState.AddModelError(formFile.Name, "File is empty.");
-                        }
+                            if (entry.FullName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                                                   || entry.FullName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                                                   || entry.FullName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
 
-
-                        using (var zip = new ZipArchive(memoryStream, ZipArchiveMode.Read))
-                        {
-                            foreach (var entry in zip.Entries)
                             {
-                                if (!entry.FullName.StartsWith("_"))
-                                {
-                                    if (entry.FullName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                                                           || entry.FullName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
-                                                           || entry.FullName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-
-                                    {
-                                        numberOfPict++;
-                                    }
-                                    else if (entry.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        numberOfTxtFiles++;
-
-                                        using (var fileStream = entry.Open())
-                                        {
-                                            using (var file = new System.IO.StreamReader(fileStream))
-                                            {
-                                                while (file.ReadLine() != null)
-                                                {
-                                                    numberOfPicAnswPairs++;
-                                                }
-                                            }
-                                        }
-
-                                    }
-                                    else
-                                    {
-                                        modelState.AddModelError(formFile.Name, "bu fayil bize leazim deyil ");
-                                        break;
-                                    }
-                                }
+                                numberOfPict++;
                             }
-
-                            if (CheckForRequirements(data, numberOfPict, numberOfTxtFiles, numberOfPicAnswPairs, selectedAnswerValue,
-                                minValue, maxValue, modelState) && modelState.IsValid)
+                            else if (entry.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
                             {
+                                numberOfTxtFiles++;
 
-                                return memoryStream.ToArray();
+                                using var fileStream = entry.Open();
+                                using var file = new System.IO.StreamReader(fileStream);
+                                while (file.ReadLine() != null)
+                                {
+                                    numberOfPicAnswPairs++;
+                                }
+
                             }
                             else
                             {
-
-                                return new byte[0];
+                                numberOfOthrFiles++;
                             }
 
-
                         }
+                    }
 
+                    long[] numbers = new long[] { numberOfPict, numberOfTxtFiles, numberOfOthrFiles, numberOfPicAnswPairs };
+
+                    if (CheckForRequirements(data, numbers,
+                        minValue, maxValue, modelState) && modelState.IsValid)
+                    {
+
+                        return memoryStream.ToArray();
+                    }
+                    else
+                    {
+
+                        return Array.Empty<byte>();
                     }
 
 
                 }
                 catch (Exception ex)
                 {
-                    modelState.AddModelError(formFile.Name, "File upload failed. " +
-                        $"Please contact the Help Desk for support. Error: {ex.HResult}");
+                    modelState.AddModelError(trustedFileNameForDisplay, "Не удалось загрузить файл. " +
+                        $"Пожалуйста, свяжитесь с поддержкой. Ошибка: " + ex);
 
                 }
             }
 
-            return new byte[0];
+            return Array.Empty<byte>();
         }
 
 
-        private static bool CheckForRequirements(FileData data, long numbOfPictures, long numbOfTetxFiles, long numberOfTxtLines, int selectedAnswerValue, int minValue,
+        private static bool CheckForRequirements(FileData data, long[] counts, int minValue,
             int maxValue, ModelStateDictionary modelState)
 
         {
 
             if (data.ContainsCyrillic)
             {
-                minValue = minValue + 3000;
-                maxValue = maxValue + 3000;
+                minValue += +3000;
+                maxValue += +3000;
             }
 
             if (data.ContainsLatin)
             {
-                minValue = minValue + 3000;
-                maxValue = maxValue + 3000;
+                minValue += +3000;
+                maxValue += +3000;
             }
 
             if (data.ContainsNumbers)
             {
-                minValue = minValue + 3000;
-                maxValue = maxValue + 3000;
+                minValue += +3000;
+                maxValue += +3000;
             }
 
             if (data.ContainsSpChar)
             {
-                minValue = minValue + 3000;
-                maxValue = maxValue + 3000;
+                minValue += 3000;
+                maxValue += 3000;
             }
 
-            //if (!(numbOfPictures > minValue && numbOfPictures < maxValue))
-            //{
-            //    modelState.AddModelError("File", "Количество картинок, находящихся в архиве, начинается c диапазон");
-            //    return false;
-            //}
-
-            if (!(selectedAnswerValue == 2 && numbOfPictures == numberOfTxtLines))
+            if (data.HasRegistrSensitivity)
             {
-                modelState.AddModelError("File", "Количество ответов совпадает с количеством картинок, если указано расположение ответов “в файле”");
+                minValue += 3000;
+                maxValue += 3000;
+            }
+
+            if (counts[0] == 0 && counts[2] != 0)
+            {
+
+                modelState.AddModelError("File", "Неправильный формат входных данных");
+                return false;
+
+            }
+
+
+            if (!(counts[0] > minValue && counts[0] < maxValue))
+            {
+                modelState.AddModelError("File", "Количество картинок должно находится в диапазоне от " + minValue +
+                  " до " + maxValue +
+                    ". Количество изображений в вашем архиве: " + counts[0].ToString());
                 return false;
             }
 
-            if (selectedAnswerValue == 2 && numbOfTetxFiles == 0)
+            if (data.SelectedAnswerId == 2)
             {
-                modelState.AddModelError("File", "Присутствует файл с ответами, если указано, что ответы в файле");
-                return false;
+                if (counts[1] == 0)
+                {
+                    modelState.AddModelError("File", "Указано, что ответы в файле, но файл в архиве отстутствует");
+                    return false;
+                }
+                else if (counts[0] != counts[3])
+                {
+                    modelState.AddModelError("File", "Количество ответов не совпадает с количеством картинок. " +
+                       "Количество картинок в архиве: " + counts[0].ToString() + "; Количество ответов: " + counts[3].ToString());
+                    return false;
+                }
             }
 
             return true;
         }
 
-        private static bool CheckForValidation(FileData data, IFormFile postedFile, ModelStateDictionary modelState, string[] permittedExtensions)
+        private static bool CheckForValidation(FileData data, IFormFile postedFile, ModelStateDictionary modelState,
+            string[] permittedExtensions, string targetFilePath, string trustedFileNameForFileStorage)
         {
 
             if (data.Name.Contains("captcha"))
@@ -205,9 +182,17 @@ namespace UploadWebApp.Utilities
 
                 return false;
             }
+
+            if (data.Name.Length > 8)
+            {
+                modelState.AddModelError("File", " Максимальная длина имени - 8 символов!");
+
+                return false;
+            }
+
             if (data.ContainsCyrillic == false && data.ContainsLatin == false && data.ContainsNumbers == false)
             {
-                modelState.AddModelError("File", "Выбрано как минимум одно из: “Содержит кириллицу”, “Содержит латиницу”,“Содержит цифры”");
+                modelState.AddModelError("File", "Выберите как минимум один из параметров: “Содержит кириллицу”, “Содержит латиницу”,“Содержит цифры”");
 
                 return false;
             }
@@ -221,17 +206,15 @@ namespace UploadWebApp.Utilities
 
             if (string.IsNullOrEmpty(ext) || !permittedExtensions.Contains(ext))
             {
-                modelState.AddModelError(data.Name, " file " +
-                    "type isn't permitted or the file's signature " +
-                    "doesn't match the file's extension.");
+                modelState.AddModelError(data.Name, "Неправильный формат заргружаемых данных: " +
+                    "данные должны подаваться в систему в виде архива");
                 return false;
 
             }
 
-            if (postedFile.Length == 0)
+            if (System.IO.File.Exists(Path.Combine(targetFilePath, trustedFileNameForFileStorage)))
             {
-                modelState.AddModelError(data.Name, "File is empty.");
-
+                modelState.AddModelError(data.Name, "Файл с таким именем уже существует.");
                 return false;
             }
 

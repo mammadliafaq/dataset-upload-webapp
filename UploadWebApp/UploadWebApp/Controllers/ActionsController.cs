@@ -10,7 +10,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using UploadWebApp.Data;
-using UploadWebApp.Filters;
 using UploadWebApp.Models;
 using UploadWebApp.Utilities;
 using Microsoft.AspNetCore.Hosting;
@@ -53,7 +52,14 @@ namespace UploadWebApp.Controllers
         // GET: Actions
         public async Task<IActionResult> Index()
         {
-            return View(await _context.FileData.ToListAsync());
+            CommonViewModel model = new CommonViewModel();
+
+            model.FileData = new FileData();
+
+            model.DataSet = await _context.FileData.ToListAsync();
+
+            return View(model);
+            // return View(await _context.FileData.ToListAsync());
         }
 
         // GET: Actions/Details/5
@@ -84,52 +90,41 @@ namespace UploadWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [RequestFormLimits(MultipartBodyLengthLimit = 268435456)]
-        public async Task<IActionResult> Create([Bind("Id,Name,CreationDate,ContainsCyrillic,ContainsLatin,ContainsNumbers,ContainsSpChar")] FileData fileData,
-           IFormFile postedFile, int SelectedAnswerId)
+        [RequestFormLimits(MultipartBodyLengthLimit = 2147483647)]
+        public async Task<IActionResult> Create(CommonViewModel model,
+           IFormFile postedFile)
         {
-            var selectedValue = SelectedAnswerId;
+            ModelState.Clear();
 
+            FileData fileData = model.FileData;
 
+            CommonViewModel commonView = new CommonViewModel();
+
+            commonView.FileData = fileData;
+
+            commonView.DataSet = await _context.FileData.ToListAsync();
+
+            if (postedFile == null)
+            {
+                ModelState.AddModelError(fileData.Name, "Выберите файл для загрузки");
+                return View("Index", commonView);
+            }
 
             try
             {
-                long size = postedFile.Length;
-
-
-
-                int numberOfPict = 0;
-
-                int counter = 0;
-
-
-
                 var streamedFileContent = new byte[0];
-
-
-
-                string folderName = fileData.Name + "/";
                 var ext = Path.GetExtension(postedFile.FileName).ToLowerInvariant();
-                var trustedFileNameForFileStorage = Path.Combine(_targetFilePath, folderName + fileData.Name + ext);
+                var trustedFileNameForFileStorage = Path.Combine(_targetFilePath, fileData.Name + ext);
 
-                streamedFileContent = await FileHelpers.ProcessedFormFile<ActionsController>(fileData, postedFile, ModelState, _permittedExtensions,
-                    SelectedAnswerId, _minValue, _maxValue);
+                if (!Directory.Exists(_targetFilePath)) Directory.CreateDirectory(_targetFilePath);
 
-                if (!ModelState.IsValid)
-                {
-                    ViewBag.Message = "File upload failed!!" + ModelState;
-                    return View(fileData);
-                }
+                streamedFileContent = await FileHelpers.ProcessedFormFile<ActionsController>(fileData, postedFile, ModelState,
+                    _permittedExtensions, _minValue, _maxValue, _targetFilePath, trustedFileNameForFileStorage);
 
-                if (!Directory.Exists(Path.Combine(_targetFilePath, folderName)))
-                    Directory.CreateDirectory(Path.Combine(_targetFilePath, folderName));
-
-
-
-                ViewBag.Message = "File uploaded successfully.";
 
                 if (ModelState.IsValid)
                 {
+
                     using (var targetStream = System.IO.File.Create(
                     Path.Combine(_targetFilePath, trustedFileNameForFileStorage)))
                     {
@@ -139,73 +134,27 @@ namespace UploadWebApp.Controllers
 
                     _context.Add(fileData);
                     await _context.SaveChangesAsync();
+
+                    ViewBag.Message = "Файл заргужен в систему успешно.";
+
                     return RedirectToAction(nameof(Index));
                 }
                 else
                 {
-                    return View(fileData);
+
+                    return View("Index", commonView);
                 }
 
-
-                //using (var stream = System.IO.File.Create(trustedFileNameForFileStorage))
-                //{
-                //    await postedFile.CopyToAsync(stream);
-                //}
-
-
-                //using ZipArchive archive = ZipFile.OpenRead(trustedFileNameForFileStorage);
-
-                //foreach (ZipArchiveEntry entry in archive.Entries)
-                //{
-
-                //    var insideFileExtension = Path.GetExtension(entry.FullName);
-                //    if (!entry.FullName.StartsWith("_"))
-                //    {
-                //        if (entry.FullName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                //                                       || entry.FullName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
-                //                                       || entry.FullName.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-
-                //        {
-                //            numberOfPict++;
-                //        }
-                //        else
-                //        {
-                //            if (entry.FullName.EndsWith(".txt", StringComparison.OrdinalIgnoreCase))
-                //            {
-
-                //                string destinationPath = Path.GetFullPath(Path.Combine(_targetFilePath, folderName + "/answers.txt"));
-
-
-                //                if (destinationPath.StartsWith(_targetFilePath, StringComparison.Ordinal))
-                //                    entry.ExtractToFile(destinationPath);
-
-                //                string line;
-
-                //                System.IO.StreamReader file = new System.IO.StreamReader(destinationPath);
-
-                //                while ((line = file.ReadLine()) != null)
-                //                {
-                //                    System.Console.WriteLine(line);
-                //                    counter++;
-                //                }
-
-                //                file.Close();
-
-                //            }
-
-                //        }
-                //    }
-
-                //}
-
             }
-            catch (Exception message)
+            catch (Exception ex)
             {
-                ViewBag.Message = "File upload failed!!" + message;
+                ModelState.AddModelError(fileData.Name, "Не удалось загрузить файл. " +
+                        $"Пожалуйста, свяжитесь с поддержкой. Ошибка: " + ex);
+                return View("Index", commonView);
 
             }
 
-            return View(fileData);
+
         }
 
 
@@ -226,9 +175,7 @@ namespace UploadWebApp.Controllers
             return View(fileData);
         }
 
-        // POST: Actions/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Name,CreationDate,ContainsCyrillic,ContainsLatin,ContainsNumbers,ContainsSpChar")] FileData fileData)

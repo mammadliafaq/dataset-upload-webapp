@@ -1,22 +1,27 @@
 ﻿<Properties StartupConfiguration="{93D58B70-BCD9-4FA7-8158-C2F5BBCF43B8}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="UploadWebApp/Startup.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="UploadWebApp/Controllers/ActionsController.cs">
     <Files>
-      <File FileName="UploadWebApp/Controllers/ActionsController.cs" Line="223" Column="14" />
-      <File FileName="UploadWebApp/Utilities/FileHelpers.cs" Line="146" Column="1" />
-      <File FileName="UploadWebApp/Views/Actions/Create.cshtml" Line="102" Column="8" />
-      <File FileName="UploadWebApp/Views/Actions/Index.cshtml" Line="101" Column="8" />
-      <File FileName="UploadWebApp/Startup.cs" Line="142" Column="14" />
+      <File FileName="UploadWebApp/Utilities/FileHelpers.cs" Line="93" Column="37" />
+      <File FileName="UploadWebApp/Views/Actions/Index.cshtml" Line="9" Column="11" />
+      <File FileName="UploadWebApp/Controllers/ActionsController.cs" Line="189" Column="14" />
+      <File FileName="UploadWebApp/Views/Actions/Delete.cshtml" Line="7" Column="17" />
+      <File FileName="UploadWebApp/Views/Actions/Details.cshtml" Line="5" Column="2" />
+      <File FileName="UploadWebApp/Views/Actions/Edit.cshtml" Line="10" Column="1" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
           <Node name="UploadWebApp" expanded="True">
             <Node name="UploadWebApp" expanded="True">
-              <Node name="Utilities" expanded="True" />
+              <Node name="Controllers" expanded="True" />
+              <Node name="Models" expanded="True" />
               <Node name="Views" expanded="True">
-                <Node name="Actions" expanded="True" />
+                <Node name="Actions" expanded="True">
+                  <Node name="Edit.cshtml" selected="True" />
+                </Node>
+                <Node name="Shared" expanded="True" />
               </Node>
-              <Node name="Startup.cs" selected="True" />
+              <Node name="wwwroot" expanded="True" />
             </Node>
           </Node>
         </State>
@@ -27,10 +32,7 @@
   <MonoDevelop.Ide.ItemProperties.UploadWebApp PreferredExecutionTarget="/Applications/Safari.app" />
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore>
-      <Breakpoint file="/Users/afaqmammadli/Projects/UploadWebApp/UploadWebApp/Views/Actions/Create.cshtml" relfile="UploadWebApp/Views/Actions/Create.cshtml" line="125" column="1" />
-      <Breakpoint file="/Users/afaqmammadli/Projects/UploadWebApp/UploadWebApp/Utilities/FileHelpers.cs" relfile="UploadWebApp/Utilities/FileHelpers.cs" line="118" column="1" />
-    </BreakpointStore>
+    <BreakpointStore />
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MultiItemStartupConfigurations />
 </Properties>

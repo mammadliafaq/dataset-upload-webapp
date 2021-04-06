@@ -9,7 +9,7 @@ using UploadWebApp.Data;
 namespace UploadWebApp.Migrations
 {
     [DbContext(typeof(UploadingContext))]
-    [Migration("20210405112800_InitialCreate")]
+    [Migration("20210405225325_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,10 +39,16 @@ namespace UploadWebApp.Migrations
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("HasRegistrSensitivity")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(8)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("SelectedAnswerId")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

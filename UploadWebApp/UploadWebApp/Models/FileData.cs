@@ -15,11 +15,11 @@ namespace UploadWebApp.Models
         public int Id { get; set; }
 
         [Display(Name = "Имя")]
-        [Required(ErrorMessage = "Имя is required")]
-        [StringLength(8, MinimumLength = 4, ErrorMessage = "Максимальная длина имени - от 4 до 8 символов")]
-        [MaxLength(8, ErrorMessage = "Максимальная длина имени - 8 символов!")]
-        [MinLength(4, ErrorMessage = "Minimalnaya длина имени - от 4 символов!")]
-        [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "Имя содержит только латинские буквы")]
+        [Required(ErrorMessage = "Необходимо дать имя загружаемому датасету")]
+        //[StringLength(8, MinimumLength = 4, ErrorMessage = "Максимальная длина имени - от 4 до 8 символов")]
+        //[MaxLength(8, ErrorMessage = "Максимальная длина имени - 8 символов!")]
+        [MinLength(4, ErrorMessage = "Минимальная длина имени - от 4 символов!")]
+        [RegularExpression(@"^[a-zA-Z0-9]+$", ErrorMessage = "Имя должно содержать только латинские буквы")]
         public string Name { get; set; }
 
         [Display(Name = "Дата создания")]
@@ -38,7 +38,10 @@ namespace UploadWebApp.Models
         [Display(Name = "Содержит специальные символы")]
         public Boolean ContainsSpChar { get; set; }
 
-        [NotMapped]
+        [Display(Name = "Чувствительность к регистру")]
+        public Boolean HasRegistrSensitivity { get; set; }
+
+
         public int SelectedAnswerId { get; set; }
 
         [NotMapped]
@@ -46,6 +49,6 @@ namespace UploadWebApp.Models
 
         [NotMapped]
         public IFormFile postedFile { get; set; }
-        //public IEnumerable<FileData> ResultSet { get; set; }
+
     }
 }

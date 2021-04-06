@@ -18,7 +18,9 @@ namespace UploadWebApp.Migrations
                     ContainsCyrillic = table.Column<bool>(type: "INTEGER", nullable: false),
                     ContainsLatin = table.Column<bool>(type: "INTEGER", nullable: false),
                     ContainsNumbers = table.Column<bool>(type: "INTEGER", nullable: false),
-                    ContainsSpChar = table.Column<bool>(type: "INTEGER", nullable: false)
+                    ContainsSpChar = table.Column<bool>(type: "INTEGER", nullable: false),
+                    HasRegistrSensitivity = table.Column<bool>(type: "INTEGER", nullable: false),
+                    SelectedAnswerId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
