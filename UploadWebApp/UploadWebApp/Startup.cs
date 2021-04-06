@@ -11,7 +11,6 @@ using Microsoft.Extensions.Hosting;
 using UploadWebApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.Features;
-using UploadWebApp.Filters;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -38,53 +37,19 @@ namespace UploadWebApp
 
             services.Configure<IISServerOptions>(options =>
             {
-                options.MaxRequestBodySize = int.MaxValue; // or your desired value
+                options.MaxRequestBodySize = 2147483647;
             });
 
             services.Configure<KestrelServerOptions>(options =>
             {
-                options.Limits.MaxRequestBodySize = 209715200; // if don't set default value is: 30 MB
+                options.Limits.MaxRequestBodySize = 2147483647;
             });
 
             services.Configure<FormOptions>(options =>
             {
-                options.ValueLengthLimit = 209715200;
-                options.MultipartBodyLengthLimit = 209715200; // if don't set default value is: 128 MB
-                options.MultipartHeadersLengthLimit = 209715200;
-            });
-
-            services.AddRazorPages(options =>
-            {
-                options.Conventions
-                    .AddPageApplicationModelConvention("/Index",
-                        model =>
-                        {
-                            model.Filters.Add(
-                                new GenerateAntiforgeryTokenCookieAttribute());
-                            model.Filters.Add(
-                                new DisableFormValueModelBindingAttribute());
-                            model.Filters.Add(
-                                new RequestFormLimitsAttribute() { MultipartBodyLengthLimit = 268435456 });
-                        });
-                options.Conventions
-                    .AddPageApplicationModelConvention("/Index",
-                        model =>
-                        {
-                            model.Filters.Add(
-                                new GenerateAntiforgeryTokenCookieAttribute());
-                            model.Filters.Add(
-                                new DisableFormValueModelBindingAttribute());
-                        });
-
-                options.Conventions
-        .AddPageApplicationModelConvention("/Index",
-            model =>
-            {
-                // Handle requests up to 50 MB
-                model.Filters.Add(
-                    new RequestSizeLimitAttribute(209715200));
-            });
-
+                options.ValueLengthLimit = 2147483647;
+                options.MultipartBodyLengthLimit = 2147483647;
+                options.MultipartHeadersLengthLimit = 2147483647;
             });
 
             // To list physical files from a path provided by configuration:
@@ -103,7 +68,7 @@ namespace UploadWebApp
         {
             webBuilder.ConfigureKestrel((context, options) =>
             {
-                // Handle requests up to 50 MB
+                // Handle requests up to 209 MB
                 options.Limits.MaxRequestBodySize = 209715200;
             })
             .UseStartup<Startup>();
